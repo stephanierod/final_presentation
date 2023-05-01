@@ -1,0 +1,171 @@
+---
+title: "The Effects of Mindfulness on Working Memory, 
+Stress Management, and Simultaneous Interpreter Performance"
+author: "Stephanie Rodriguez"
+institute: "Rutgers University"
+date: "2023/05/01"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: ["hygge", "rutgers", "rutgers-fonts"]
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "16:9"
+      powerpoint_presentation:
+    slide_width: 10
+
+---
+# Introduction
+
+* Evidence has shown that the practice of mindfulness, such as focused meditation, increases the cognitive function of working memory and decreases the stress levels in Simultaneous Interpreting (Timaravá, et. al., 2014). 
+
+* The primary aim of this study is to investigate stress management of simultaneous interpreters in a court setting through mindfulness and to show how to bridge this gap to provide court interpreters with stress management techniques to increase interpreting performance. 
+
+---
+# Research Questions & Hypothesis
+(1) Do professional court interpreters who practice mindfulness experience lower stress levels when interpreting for a highly sensitive case that may cause VT?
+
+(2) Do professional court interpreters who practice mindfulness meditation have increased working memory and experience less interpreting production errors than those who do not? 
+
+First, it is hypothesized that practice mindfulness through focused meditation may decrease the presence of stress while completing the task of interpreting and may prevent the susceptibility of VT. 
+
+Second, we predict that although an interpreter advantage in WM is evidenced in a majority of studies, professional court interpreters who practice mindfulness show an increased WM skillset than professional court interpreters who do not practice mindfulness meditation. 
+
+
+---
+# Participants
+
+* 40 adults all New Jersey state-certified Spanish-English court interpreters. 
+
+* All participants demonstrated court interpreting classification levels for registered interpreters, which is defined having successfully passed the New Jersey State Court Interpreters  exam by scoring either Registered-Master or Registered-Journey. 
+
+* All participants are staff court interpreters or contract court interpreters.
+
+* All participants had completed at least 40 hours of professional court interpreting, as this is the advised hours of training required by the U.S. Bureau of Labor Statistics. 
+
+* All participants showed no signs of abnormal speech, language, cognitive, hearing, or visual function. 
+
+```{r, load-libraries, include = FALSE}
+library(tidyverse)
+library(knitr)
+library(kableExtra)
+library(dplyr)
+library(latex2exp)
+```
+
+```{r, load-data, include = FALSE }
+read_csv(file = "./raw_data/mindfullness_data.csv")
+id_data <- read_csv(file = "./raw_data/mindfullness_data.csv")
+```
+
+---
+# Raw Data
+
+The raw data consists of **participant ID**, **age**, baseline heart rate **(bl)**, heart rate while interpreting a low stress case **(ls)**, and heart rate while interpreting a high stress case **(hs)**.
+
+<br>
+
+```{r, raw-data, results='asis', echo=FALSE}
+
+raw_data <- data.frame(
+  id_data = c("092762_0", "098039_0", "095408_0", "091352_0", "097246_0", "094819_0"),
+  age = c(40, 35, 45, 33, 42, 45),
+  bl = c(55, 69, 57, 85, 77, 78),
+  ls = c(111, 82, 94, 127, 130, 127),
+  hs = c(156, 153, 127, 142, 123, 163)
+)
+
+knitr::kable(raw_data, caption = "Raw Data", align = "c") %>% kable_styling(latex_options = c("centered"))
+```
+
+---
+# Tidy Data
+
+This represents the tidy data with each row containing information about the participants **mindfulness, age, baseline heart rate, heart rate while interpreting a low stress case, and heart rate while interpreting a high stress case**. The mindfulness column was created by separating the participants by 0 (not practicing mindfulness), and 1 (practicing mindfulness). 
+
+The **mindfulness** column was created by separating the original **id** column into two parts using the underscore character as a separator. 
+
+Below is displayed the first 6 rows and the last 6 rows of the data. 
+```{r, tidy-data, results='asis', echo=FALSE}
+
+tidy_data <-(id_data) %>% 
+    pivot_longer(cols = -c(id, age), names_to = "condition", values_to = "HR") %>%
+  separate(id, c("id", "mindfulness"), sep = "_") 
+
+view(tidy_data)
+
+knitr::kable(rbind(head(tidy_data, 3), tail(tidy_data, 3)), align = "c", col.names = c("Participant", "Mindfulness", "Age", "Condition", "HR"))
+
+```
+
+---
+# Descriptive Statistics
+
+This is the **descriptive stats for the HR levels (HR)** variable, grouped by the mindfulness variable. 
+
+The three different HR levels are 1) Baseline HR, 2) HR level while interpreting a low stress task, and 3) HR level while interpreting a high stress task.
+
+Specifically, it calculates the mean, median, standard deviation, minimum, and maximum values of LS for each mindfulness group (0 = no mindfulness and 1 = mindfulness).
+
+<br>
+
+```{r, descriptive-stats-bl, results='asis', echo=FALSE}
+tidy_data %>% 
+  group_by(mindfulness, condition) %>%
+  summarise(
+    mean_hr = mean(HR),
+    median_hr = median(HR),
+    sd_hr = sd(HR),
+    min_hr = min(HR),
+    max_hr = max(HR),
+  ) %>%
+  knitr::kable(
+    caption = "Descriptive Stats for HR", col.names = c("Mindfulness", "Condition", "Mean", "Median", "SD", "Min", "Max")
+  )
+```
+
+
+---
+# Analysis of HR Levels
+
+```{r, percentage-increase, results='asis', echo=FALSE, out.width="30%", out.width="30%", fig.align='center', fig.margin = TRUE}
+tidy_data %>% 
+ggplot(aes(x = mindfulness, y = HR, color = condition)) +
+  geom_boxplot() +
+  ggtitle("HR Levels") +
+  xlab("Group") +
+  ylab("HR")
+
+
+```
+
+The boxplot shows the distribution of HR scores by mindfulness level. 
+
+The baseline HR is lower for those who practice mindfulness, and appears similar for both HR levels in low stress interpreting and high stress interpreting tasks. The baseline HR, HR levels in low stress interpreting, and high stress interpreting tasks are higher for those who do not practice mindfulness.
+
+The plot suggests that there may be a relationship between HR, mindfulness level, and stress condition.
+---
+# Analysis 
+
+```{r, lm, results='asis', echo=FALSE, include=FALSE}
+mod_m <- lm(HR ~ mindfulness, data = tidy_data)
+mod_mc <- lm(HR ~ mindfulness + condition, data = tidy_data)
+
+summary(mod_m)
+summary(mod_mc)
+```
+
+mod_m <- lm(HR ~ mindfulness, data = tidy_data)
+
+mod_mc <- lm(HR ~ mindfulness + condition, data = tidy_data)
+
+* This model aims to predict HR based on participants' mindfulness scores.
+
+* This model aims to predict HR based on both participants' mindfulness scores and their condition (either high stress or low stress).
+
+* In terms of mindfulness, the practice of it was significant in high stress interpreting tasks, but not in low stress interpreting tasks. 
+
+    Will be providing statistical analysis in final. 
+
